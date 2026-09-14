@@ -500,8 +500,22 @@ class MatchManager:
         """Determines best discard tile for CPU player using evaluation engine."""
         hand = self.hands[player_idx]
         ctx = self.get_match_context()
+        is_dealer = (self.dealer_idx == player_idx)
+        seat_wind = self.get_seat_wind(player_idx)
+        visible_tiles = self.get_visible_tiles(player_idx)
+
         try:
-            evals = evaluate_placement_discards(hand, ctx, player_idx)
+            evals = evaluate_placement_discards(
+                hand,
+                ctx,
+                player_idx,
+                is_dealer=is_dealer,
+                dora_indicators=self.dora_indicators,
+                turn_number=self.turn_count + 1,
+                remaining_wall_tiles=len(self.wall),
+                seat_wind=seat_wind,
+                visible_tiles=visible_tiles,
+            )
             if evals:
                 top_mpsz = evals[0].discard_tile.mpsz()
                 for t in hand:
@@ -511,7 +525,16 @@ class MatchManager:
             pass
 
         try:
-            evals = evaluate_hand_discards(hand)
+            evals = evaluate_hand_discards(
+                hand,
+                is_dealer=is_dealer,
+                dora_indicators=self.dora_indicators,
+                turn_number=self.turn_count + 1,
+                remaining_wall_tiles=len(self.wall),
+                seat_wind=seat_wind,
+                round_wind=self.round_wind,
+                visible_tiles=visible_tiles,
+            )
             if evals:
                 top_mpsz = evals[0].discard_tile.mpsz()
                 for t in hand:

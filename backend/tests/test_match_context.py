@@ -80,3 +80,13 @@ def test_get_hud_data_with_context():
     assert len(hud["candidates"]) > 0
     assert "best_tile" in hud
     assert "current_rank" in hud
+
+
+def test_choose_cpu_discard_with_context():
+    mm = MatchManager()
+    mm.start_new_match(seed=789)
+    # CPU 1 chooses discard using full match context
+    cpu_hand = list(mm.hands[1])
+    discard = mm._choose_cpu_discard(1)
+    assert discard in cpu_hand
+
