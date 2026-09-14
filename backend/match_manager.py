@@ -138,7 +138,25 @@ class MatchManager:
             except ValueError:
                 return 999
 
-        self.hands[player_idx].sort(key=tile_key)
+    def get_seat_wind(self, player_idx: int) -> TileName:
+        """Calculates seat wind for a player (East, South, West, North)."""
+        winds = [TileName.East, TileName.South, TileName.West, TileName.North]
+        wind_idx = (player_idx - self.dealer_idx) % 4
+        return winds[wind_idx]
+
+    def get_visible_tiles(self, player_idx: int = 0) -> List[TileName]:
+        """Aggregates all visible tiles from player hand, rivers, open melds, and dora indicators."""
+        visible: List[TileName] = []
+        if 0 <= player_idx < len(self.hands):
+            visible.extend(self.hands[player_idx])
+        for river in self.rivers:
+            visible.extend(river)
+        for meld_list in self.melds:
+            for meld in meld_list:
+                if hasattr(meld, "tiles"):
+                    visible.extend(meld.tiles)
+        visible.extend(self.dora_indicators)
+        return visible
 
     def get_match_context(self) -> MatchContext:
         """Returns the current MatchContext for evaluation."""
@@ -178,7 +196,20 @@ class MatchManager:
 
         ctx = self.get_match_context()
         try:
-            hud = get_ai_hud_data(human_tiles, ctx, player_idx=0)
+            is_dealer = (self.dealer_idx == 0)
+            seat_wind = self.get_seat_wind(0)
+            visible_tiles = self.get_visible_tiles(0)
+            hud = get_ai_hud_data(
+                human_tiles,
+                ctx,
+                player_idx=0,
+                is_dealer=is_dealer,
+                dora_indicators=self.dora_indicators,
+                turn_number=self.turn_count + 1,
+                remaining_wall_tiles=len(self.wall),
+                seat_wind=seat_wind,
+                visible_tiles=visible_tiles,
+            )
         except Exception:
             hud = {
                 "current_rank": 1,
@@ -248,7 +279,19 @@ class MatchManager:
 
         # Evaluate decision before removing tile
         try:
-            candidates = evaluate_hand_discards(hand)
+            is_dealer = (self.dealer_idx == 0)
+            seat_wind = self.get_seat_wind(0)
+            visible_tiles = self.get_visible_tiles(0)
+            candidates = evaluate_hand_discards(
+                hand,
+                is_dealer=is_dealer,
+                dora_indicators=self.dora_indicators,
+                turn_number=self.turn_count + 1,
+                remaining_wall_tiles=len(self.wall),
+                seat_wind=seat_wind,
+                round_wind=self.round_wind,
+                visible_tiles=visible_tiles,
+            )
             self.turn_count += 1
             self.review_tracker.record_decision(self.turn_count, tile_to_discard, candidates)
         except Exception:
