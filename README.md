@@ -28,8 +28,8 @@ uv run uvicorn main:app --reload --port 8000
 ### 2. フロントエンド
 ```bash
 cd frontend
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 ブラウザで `http://localhost:5173` を開きます。
