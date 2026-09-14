@@ -34,6 +34,24 @@ export const Tile: React.FC<TileProps> = ({
     xl: "w-16 h-22 min-w-[64px] min-h-[88px]",
   }[size];
 
+  if (isBack) {
+    return (
+      <div
+        className={`
+          ${sizeClasses}
+          relative inline-flex items-center justify-center p-0 select-none
+          rounded-md shadow-md bg-amber-900 border border-amber-950 overflow-hidden
+        `}
+      >
+        <img
+          src="/tiles/back.svg"
+          alt="back"
+          className="w-full h-full object-cover pointer-events-none select-none"
+        />
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
@@ -42,13 +60,15 @@ export const Tile: React.FC<TileProps> = ({
       className={`
         ${sizeClasses}
         relative inline-flex items-center justify-center p-0 select-none
-        transition-all duration-150 transform rounded-sm bg-transparent
+        transition-all duration-150 transform rounded-md
+        bg-white shadow-md
+        border border-stone-200 border-b-2 border-r-2 border-b-stone-400 border-r-stone-300
         ${selected ? "-translate-y-3.5 ring-2 ring-amber-400 shadow-2xl scale-105" : ""}
         ${highlighted ? "ring-2 ring-cyan-400 shadow-lg animate-pulse scale-105" : ""}
-        ${isDora ? "ring-1 ring-red-500/80" : ""}
+        ${isDora ? "ring-2 ring-red-500 shadow-md" : ""}
         ${
           onClick && !disabled
-            ? "cursor-pointer hover:-translate-y-2 hover:shadow-xl hover:brightness-110 active:translate-y-0"
+            ? "cursor-pointer hover:-translate-y-2 hover:shadow-xl hover:brightness-105 active:translate-y-0"
             : "cursor-default"
         }
       `}
@@ -57,19 +77,19 @@ export const Tile: React.FC<TileProps> = ({
         <img
           src={svgPath}
           alt={label || mpsz}
-          className="w-full h-full object-contain pointer-events-none drop-shadow select-none"
+          className="w-full h-full object-contain pointer-events-none drop-shadow-sm select-none rounded-md"
           loading="eager"
           onError={() => setImgError(true)}
         />
       ) : (
-        <div className="w-full h-full bg-stone-100 text-stone-900 border border-stone-400 rounded flex items-center justify-center font-bold text-xs">
+        <div className="w-full h-full bg-white text-stone-900 border border-stone-400 rounded-md flex items-center justify-center font-bold text-xs">
           {label || mpsz}
         </div>
       )}
 
       {/* Dora indicator badge */}
       {isDora && !isBack && (
-        <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-600 rounded-full ring-1 ring-white shadow-sm" />
+        <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-600 rounded-full ring-1 ring-white shadow-sm z-10" />
       )}
     </button>
   );

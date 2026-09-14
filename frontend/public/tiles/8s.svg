@@ -20,6 +20,9 @@
    inkscape:export-filename="C:\Users\Fluffy\Documents\Projects\ExtraRiichi\Sou8.png"
    inkscape:export-xdpi="180"
    inkscape:export-ydpi="180">
+  <!-- Solid White Tile Face Background -->
+  <rect x="2" y="2" width="296" height="396" rx="36" ry="36" fill="#ffffff" stroke="#d4d4d8" stroke-width="3" />
+
   <defs
      id="defs4">
     <inkscape:path-effect
