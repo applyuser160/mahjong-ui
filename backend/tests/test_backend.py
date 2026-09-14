@@ -98,3 +98,28 @@ def test_match_websocket():
         ws.send_json({"type": "discard", "tile_mpsz": first_tile, "declare_riichi": False})
         next_state = ws.receive_json()
         assert len(next_state["players"][0]["river"]) >= 1
+
+
+def test_full_round_play_and_advance():
+    """Verifies that a round can be played from start to finish and advance to the next round."""
+    mgr = MatchManager()
+    mgr.start_new_match(seed=42)
+
+    # Play until round ends
+    steps = 0
+    while mgr.status not in ["round_end", "game_over"] and steps < 200:
+        steps += 1
+        if mgr.status == "waiting_user_discard":
+            mgr.user_discard(mgr.hands[0][-1].mpsz())
+        elif mgr.status == "waiting_user_call":
+            mgr.user_call_response("pass")
+
+    assert mgr.status == "round_end"
+    assert mgr.round_result is not None
+    assert mgr.round_result["type"] in ["ron", "tsumo", "ryuukyoku"]
+
+    # Advance to next round
+    next_state = mgr.advance_to_next_round()
+    assert next_state["status"] in ["waiting_user_discard", "waiting_user_call", "processing_cpu"]
+    assert next_state["round_number"] in [1, 2]
+

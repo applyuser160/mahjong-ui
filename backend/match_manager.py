@@ -118,14 +118,13 @@ class MatchManager:
         self.wall = live_wall
         self.current_turn = self.dealer_idx
 
-        # Dealer draws 14th tile to initiate the round
-        dealer_tile = self.wall.pop(0)
-        self.hands[self.dealer_idx].append(dealer_tile)
-
         if self.dealer_idx == 0:
+            # Human dealer draws 14th tile to initiate round
+            self.hands[0].append(self.wall.pop(0))
             self._sort_hand(0)
             self.status = "waiting_user_discard"
         else:
+            # CPU dealer will draw their 14th tile at the start of step_cpu_until_user
             self.status = "processing_cpu"
             self.step_cpu_until_user()
 
