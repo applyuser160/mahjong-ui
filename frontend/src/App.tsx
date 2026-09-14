@@ -35,7 +35,6 @@ export const App: React.FC = () => {
 
       ws.onclose = () => {
         setConnected(false);
-        // Fallback or retry after 3s
         setTimeout(connectWs, 3000);
       };
 
@@ -53,7 +52,6 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Actions sent via WebSocket (or REST fallback)
   const handleDiscard = (tileMpsz: string, declareRiichi: boolean) => {
     if (wsRef.current && connected) {
       wsRef.current.send(
@@ -125,36 +123,35 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="h-screen w-screen bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
       {/* HEADER NAVBAR */}
-      <header className="flex items-center justify-between px-6 py-3 bg-slate-900/90 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md">
+      <header className="flex items-center justify-between px-4 py-2 bg-slate-900/95 border-b border-slate-800 z-50 backdrop-blur-md flex-shrink-0 h-14">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-cyan-500 flex items-center justify-center font-serif text-white font-bold text-lg shadow-lg">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-600 to-cyan-500 flex items-center justify-center font-serif text-white font-bold text-base shadow-md">
             🀄
           </div>
           <div>
-            <h1 className="text-base font-black text-white tracking-wide flex items-center gap-2">
+            <h1 className="text-sm font-black text-white tracking-wide flex items-center gap-2">
               MAHJONG AI LAB
-              <span className="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-300 font-sans font-bold rounded-full border border-emerald-500/30">
+              <span className="text-[10px] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 font-sans font-bold rounded-full border border-emerald-500/30">
                 v0.1.0
               </span>
             </h1>
-            <p className="text-[11px] text-slate-400">次世代 麻雀AI学習 & リアルタイム戦術支援プラットフォーム</p>
           </div>
         </div>
 
         {/* NAVIGATION TABS */}
-        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+        <div className="flex items-center gap-1 bg-slate-950/90 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setActiveTab("match")}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all ${
               activeTab === "match"
-                ? "bg-emerald-600 text-white shadow-md font-bold"
+                ? "bg-emerald-600 text-white shadow font-bold"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            <Gamepad2 className="w-4 h-4" />
+            <Gamepad2 className="w-3.5 h-3.5" />
             <span>AI対局 (4人卓)</span>
           </button>
 
@@ -163,11 +160,11 @@ export const App: React.FC = () => {
             onClick={() => setActiveTab("drill")}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all ${
               activeTab === "drill"
-                ? "bg-amber-600 text-white shadow-md font-bold"
+                ? "bg-amber-600 text-white shadow font-bold"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            <BrainCircuit className="w-4 h-4" />
+            <BrainCircuit className="w-3.5 h-3.5" />
             <span>何切るドリル</span>
           </button>
 
@@ -176,11 +173,11 @@ export const App: React.FC = () => {
             onClick={() => setActiveTab("review")}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all ${
               activeTab === "review"
-                ? "bg-purple-600 text-white shadow-md font-bold"
+                ? "bg-purple-600 text-white shadow font-bold"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            <BarChart2 className="w-4 h-4" />
+            <BarChart2 className="w-3.5 h-3.5" />
             <span>悪手検討</span>
           </button>
         </div>
@@ -189,14 +186,14 @@ export const App: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs">
             {connected ? (
-              <span className="flex items-center gap-1 text-emerald-400">
+              <span className="flex items-center gap-1 text-emerald-400 font-medium">
                 <Wifi className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">リアルタイム接続中</span>
+                <span className="hidden md:inline">リアルタイム同期</span>
               </span>
             ) : (
               <span className="flex items-center gap-1 text-slate-500">
                 <WifiOff className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">未接続</span>
+                <span className="hidden md:inline">オフライン</span>
               </span>
             )}
           </div>
@@ -204,7 +201,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={handleNewMatch}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 shadow-sm transition-all"
+            className="flex items-center gap-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 shadow-sm transition-all"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>新対局</span>
@@ -212,12 +209,12 @@ export const App: React.FC = () => {
         </div>
       </header>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 p-4 md:p-6 max-w-7xl w-full mx-auto">
+      {/* MAIN CONTENT FULL-SCREEN AREA */}
+      <main className="flex-1 p-2 md:p-3 w-full h-[calc(100vh-56px)] overflow-hidden">
         {activeTab === "match" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            {/* 4-Player Table Area (2 cols on large screen) */}
-            <div className="lg:col-span-2 w-full">
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-3 w-full h-full items-stretch">
+            {/* 4-Player Table Area (3 cols on XL screen: 75% width!) */}
+            <div className="xl:col-span-3 w-full h-full flex flex-col">
               {matchState ? (
                 <TableLayout
                   state={matchState}
@@ -227,23 +224,31 @@ export const App: React.FC = () => {
                   onNewMatch={handleNewMatch}
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center h-[600px] bg-slate-900/50 rounded-2xl border border-slate-800 text-slate-400">
+                <div className="flex flex-col items-center justify-center h-full bg-slate-900/50 rounded-2xl border border-slate-800 text-slate-400">
                   <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3" />
                   <p className="text-sm">卓状態を読み込んでいます...</p>
                 </div>
               )}
             </div>
 
-            {/* AI HUD Area (1 col on large screen) */}
-            <div className="lg:col-span-1 w-full h-[760px]">
+            {/* AI HUD Area (1 col on XL screen: 25% width!) */}
+            <div className="xl:col-span-1 w-full h-full overflow-hidden">
               <AiHudPanel hud={matchState?.hud} />
             </div>
           </div>
         )}
 
-        {activeTab === "drill" && <DrillView />}
+        {activeTab === "drill" && (
+          <div className="w-full max-w-6xl mx-auto h-full overflow-y-auto py-2">
+            <DrillView />
+          </div>
+        )}
 
-        {activeTab === "review" && <ReviewView />}
+        {activeTab === "review" && (
+          <div className="w-full max-w-6xl mx-auto h-full overflow-y-auto py-2">
+            <ReviewView />
+          </div>
+        )}
       </main>
     </div>
   );
