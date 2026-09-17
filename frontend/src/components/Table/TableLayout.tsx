@@ -165,6 +165,7 @@ export const TableLayout: React.FC<TableLayoutProps> = ({
         <ActionPrompt
           userActions={state.actions}
           callOptions={state.pending_call_options}
+          matchStatus={state.status}
           onAction={onCallAction}
           isRiichiSelected={isRiichiSelected}
           onToggleRiichi={() => setIsRiichiSelected(!isRiichiSelected)}

@@ -14,15 +14,23 @@ export const App: React.FC = () => {
 
   // Initialize or reconnect WebSocket
   useEffect(() => {
+    let isSubscribed = true;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const connectWs = () => {
+      if (!isSubscribed) return;
+
       const ws = new WebSocket("ws://localhost:8000/ws/match");
       wsRef.current = ws;
 
       ws.onopen = () => {
-        setConnected(true);
+        if (isSubscribed) {
+          setConnected(true);
+        }
       };
 
       ws.onmessage = (event) => {
+        if (!isSubscribed) return;
         try {
           const data = JSON.parse(event.data);
           if (data.players) {
@@ -34,11 +42,13 @@ export const App: React.FC = () => {
       };
 
       ws.onclose = () => {
+        if (!isSubscribed) return;
         setConnected(false);
-        setTimeout(connectWs, 3000);
+        reconnectTimeout = setTimeout(connectWs, 3000);
       };
 
       ws.onerror = () => {
+        if (!isSubscribed) return;
         setConnected(false);
       };
     };
@@ -46,15 +56,21 @@ export const App: React.FC = () => {
     connectWs();
 
     return () => {
+      isSubscribed = false;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
       if (wsRef.current) {
         wsRef.current.close();
       }
     };
   }, []);
 
+  const isWsReady = () => wsRef.current && wsRef.current.readyState === WebSocket.OPEN;
+
   const handleDiscard = (tileMpsz: string, declareRiichi: boolean) => {
-    if (wsRef.current && connected) {
-      wsRef.current.send(
+    if (isWsReady()) {
+      wsRef.current!.send(
         JSON.stringify({
           type: "discard",
           tile_mpsz: tileMpsz,
@@ -68,24 +84,26 @@ export const App: React.FC = () => {
         body: JSON.stringify({ tile_mpsz: tileMpsz, declare_riichi: declareRiichi }),
       })
         .then((res) => res.json())
-        .then((data) => setMatchState(data));
+        .then((data) => setMatchState(data))
+        .catch((err) => console.error("Discard fetch error:", err));
     }
   };
 
   const handleCallAction = (action: string) => {
     if (action === "tsumo") {
-      if (wsRef.current && connected) {
-        wsRef.current.send(JSON.stringify({ type: "tsumo" }));
+      if (isWsReady()) {
+        wsRef.current!.send(JSON.stringify({ type: "tsumo" }));
       } else {
         fetch("http://localhost:8000/api/match/tsumo", { method: "POST" })
           .then((res) => res.json())
-          .then((data) => setMatchState(data));
+          .then((data) => setMatchState(data))
+          .catch((err) => console.error("Tsumo fetch error:", err));
       }
       return;
     }
 
-    if (wsRef.current && connected) {
-      wsRef.current.send(
+    if (isWsReady()) {
+      wsRef.current!.send(
         JSON.stringify({
           type: "call",
           action: action,
@@ -98,27 +116,30 @@ export const App: React.FC = () => {
         body: JSON.stringify({ action: action }),
       })
         .then((res) => res.json())
-        .then((data) => setMatchState(data));
+        .then((data) => setMatchState(data))
+        .catch((err) => console.error("Call fetch error:", err));
     }
   };
 
   const handleNextRound = () => {
-    if (wsRef.current && connected) {
-      wsRef.current.send(JSON.stringify({ type: "next_round" }));
+    if (isWsReady()) {
+      wsRef.current!.send(JSON.stringify({ type: "next_round" }));
     } else {
       fetch("http://localhost:8000/api/match/next_round", { method: "POST" })
         .then((res) => res.json())
-        .then((data) => setMatchState(data));
+        .then((data) => setMatchState(data))
+        .catch((err) => console.error("NextRound fetch error:", err));
     }
   };
 
   const handleNewMatch = () => {
-    if (wsRef.current && connected) {
-      wsRef.current.send(JSON.stringify({ type: "new_match" }));
+    if (isWsReady()) {
+      wsRef.current!.send(JSON.stringify({ type: "new_match" }));
     } else {
       fetch("http://localhost:8000/api/match/new", { method: "POST" })
         .then((res) => res.json())
-        .then((data) => setMatchState(data));
+        .then((data) => setMatchState(data))
+        .catch((err) => console.error("NewMatch fetch error:", err));
     }
   };
 
