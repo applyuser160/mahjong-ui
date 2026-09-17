@@ -107,13 +107,16 @@ class MatchManager:
         self.is_riichi = [False] * 4
         self.round_result = None
         self.turn_count = 0
+        self.pending_call_options = None
+        self.last_discard = None
 
         for _ in range(13):
             for p in range(4):
                 self.hands[p].append(live_wall.pop(0))
 
-        # Sort human hand for neat display
-        self._sort_hand(0)
+        # Sort all player hands for neat display
+        for p in range(4):
+            self._sort_hand(p)
 
         self.wall = live_wall
         self.current_turn = self.dealer_idx
@@ -121,7 +124,6 @@ class MatchManager:
         if self.dealer_idx == 0:
             # Human dealer draws 14th tile to initiate round
             self.hands[0].append(self.wall.pop(0))
-            self._sort_hand(0)
             self.status = "waiting_user_discard"
         else:
             # CPU dealer will draw their 14th tile at the start of step_cpu_until_user
@@ -137,6 +139,7 @@ class MatchManager:
                 return ALL_TILES.index(t)
             except ValueError:
                 return 999
+        self.hands[player_idx].sort(key=tile_key)
 
     def get_seat_wind(self, player_idx: int) -> TileName:
         """Calculates seat wind for a player (East, South, West, North)."""
@@ -191,7 +194,7 @@ class MatchManager:
     def get_hud_data(self) -> Dict[str, Any]:
         """Calculates AI HUD data for human player (Seat 0)."""
         human_tiles = self.hands[0]
-        if not human_tiles:
+        if not human_tiles or len(human_tiles) > 14:
             return {}
 
         ctx = self.get_match_context()
@@ -210,14 +213,14 @@ class MatchManager:
                 seat_wind=seat_wind,
                 visible_tiles=visible_tiles,
             )
-        except Exception:
+        except BaseException:
             hud = {
                 "current_rank": 1,
                 "current_score": self.scores[0],
                 "is_orasu": ctx.is_orasu(),
                 "candidates": [],
-                "best_tile": human_tiles[0].as_str(),
-                "best_mpsz": human_tiles[0].mpsz(),
+                "best_tile": human_tiles[0].as_str() if human_tiles else "",
+                "best_mpsz": human_tiles[0].mpsz() if human_tiles else "",
                 "best_placement_ev": 0.0,
                 "best_note": "AI HUD calculated",
             }
@@ -227,7 +230,7 @@ class MatchManager:
             try:
                 conds = calculate_orasu_conditions(ctx, player_idx=0)
                 hud["orasu_conditions"] = [c.to_dict() for c in conds]
-            except Exception:
+            except BaseException:
                 hud["orasu_conditions"] = []
 
         return hud
@@ -360,6 +363,7 @@ class MatchManager:
                     else:
                         new_hand.append(t)
                 self.hands[0] = new_hand
+                self._sort_hand(0)
                 meld = mahjong.Meld.pon(target_tile)
                 self.melds[0].append(meld)
                 self.current_turn = 0
@@ -401,6 +405,7 @@ class MatchManager:
             "yaku": ["立直", "門前清自摸和"],
         }
         self.status = "round_end"
+        self._sort_hand(0)
         return self.get_full_game_state()
 
     def _handle_ron(self, winner: int, loser: int, tile: TileName) -> Dict[str, Any]:
@@ -411,6 +416,12 @@ class MatchManager:
         self.scores[loser] -= total_payment
         self.scores[winner] += total_payment
         self.riichi_sticks = 0
+        self.pending_call_options = None
+
+        if len(self.hands[winner]) % 3 == 1:
+            self.hands[winner].append(tile)
+        for i in range(4):
+            self._sort_hand(i)
 
         names = ["あなた (Player)", "CPU 1 (下家)", "CPU 2 (対面)", "CPU 3 (上家)"]
         self.round_result = {
@@ -473,11 +484,14 @@ class MatchManager:
                     "yaku": ["門前清自摸和", "断幺九"],
                 }
                 self.status = "round_end"
+                for i in range(4):
+                    self._sort_hand(i)
                 return
 
             # CPU chooses discard tile via AI
             discard_tile = self._choose_cpu_discard(p)
             self.hands[p].remove(discard_tile)
+            self._sort_hand(p)
             self.rivers[p].append(discard_tile)
 
             self.last_discard = {
@@ -592,6 +606,7 @@ class MatchManager:
                 else:
                     self.scores[p] -= pay_pts
 
+        self.pending_call_options = None
         self.honba += 1
         self.round_result = {
             "type": "ryuukyoku",
@@ -600,6 +615,8 @@ class MatchManager:
             "tenpai": tenpai_flags,
             "reason": "荒野流局",
         }
+        for p in range(4):
+            self._sort_hand(p)
         self.status = "round_end"
 
     def advance_to_next_round(self) -> Dict[str, Any]:
@@ -620,8 +637,9 @@ class MatchManager:
 
     def get_full_game_state(self) -> Dict[str, Any]:
         """Returns the complete game state dictionary for the client."""
+        reveal_all = (self.status == "round_end")
         table = self.to_table_state()
-        state = table.to_dict(reveal_all=False)
+        state = table.to_dict(reveal_all=reveal_all)
 
         state["status"] = self.status
         state["last_discard"] = self.last_discard
@@ -634,7 +652,7 @@ class MatchManager:
             state["hud"] = self.get_hud_data()
         else:
             state["actions"] = []
-            state["hud"] = self.get_hud_data() if self.hands[0] else {}
+            state["hud"] = {}
 
         # Blunder review tracker summary
         state["review_summary"] = self.review_tracker.to_dict()

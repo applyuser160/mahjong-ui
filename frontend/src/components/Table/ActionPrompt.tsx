@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import type { CallOptions, UserAction } from "../../types/mahjong";
 
 interface ActionPromptProps {
   userActions: UserAction[];
   callOptions?: CallOptions | null;
+  matchStatus?: string;
   onAction: (actionType: string) => void;
   isRiichiSelected: boolean;
   onToggleRiichi: () => void;
@@ -12,17 +13,34 @@ interface ActionPromptProps {
 export const ActionPrompt: React.FC<ActionPromptProps> = ({
   userActions,
   callOptions,
+  matchStatus,
   onAction,
   isRiichiSelected,
   onToggleRiichi,
 }) => {
-  const hasCallOptions = callOptions && (callOptions.can_ron || callOptions.can_pon || callOptions.can_chi);
-  const canTsumo = userActions.some((a) => a.type === "tsumo");
-  const canRiichi = userActions.some((a) => a.type === "riichi");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Reset submitting state whenever match status or call options change
+  useEffect(() => {
+    setIsSubmitting(false);
+  }, [matchStatus, callOptions]);
+
+  const isCallPhase = matchStatus === "waiting_user_call";
+  const hasCallOptions = isCallPhase && Boolean(callOptions && (callOptions.can_ron || callOptions.can_pon || callOptions.can_chi));
+
+  const isDiscardPhase = !matchStatus || matchStatus === "waiting_user_discard";
+  const canTsumo = isDiscardPhase && userActions.some((a) => a.type === "tsumo");
+  const canRiichi = isDiscardPhase && userActions.some((a) => a.type === "riichi");
 
   if (!hasCallOptions && !canTsumo && !canRiichi) {
     return null;
   }
+
+  const handleActionClick = (action: string) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    onAction(action);
+  };
 
   return (
     <div className="flex items-center justify-center gap-3 py-2 px-4 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl animate-fade-in">
@@ -30,8 +48,9 @@ export const ActionPrompt: React.FC<ActionPromptProps> = ({
       {canTsumo && (
         <button
           type="button"
-          onClick={() => onAction("tsumo")}
-          className="px-5 py-2 font-bold text-white bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 rounded-lg shadow-lg transform hover:scale-105 active:scale-95 transition-all text-sm tracking-wider"
+          disabled={isSubmitting}
+          onClick={() => handleActionClick("tsumo")}
+          className="px-5 py-2 font-bold text-white bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 disabled:opacity-50 rounded-lg shadow-lg transform hover:scale-105 active:scale-95 transition-all text-sm tracking-wider"
         >
           ツモ (和了)
         </button>
@@ -41,6 +60,7 @@ export const ActionPrompt: React.FC<ActionPromptProps> = ({
       {canRiichi && (
         <button
           type="button"
+          disabled={isSubmitting}
           onClick={onToggleRiichi}
           className={`px-5 py-2 font-bold rounded-lg shadow-lg transform hover:scale-105 active:scale-95 transition-all text-sm tracking-wider ${
             isRiichiSelected
@@ -53,33 +73,36 @@ export const ActionPrompt: React.FC<ActionPromptProps> = ({
       )}
 
       {/* Ron Call Action */}
-      {callOptions?.can_ron && (
+      {hasCallOptions && callOptions?.can_ron && (
         <button
           type="button"
-          onClick={() => onAction("ron")}
-          className="px-5 py-2 font-bold text-white bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 rounded-lg shadow-lg transform hover:scale-105 active:scale-95 transition-all text-sm tracking-wider animate-bounce"
+          disabled={isSubmitting}
+          onClick={() => handleActionClick("ron")}
+          className="px-5 py-2 font-bold text-white bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 disabled:opacity-50 rounded-lg shadow-lg transform hover:scale-105 active:scale-95 transition-all text-sm tracking-wider animate-bounce"
         >
           ロン (和了)
         </button>
       )}
 
       {/* Pon Call Action */}
-      {callOptions?.can_pon && (
+      {hasCallOptions && callOptions?.can_pon && (
         <button
           type="button"
-          onClick={() => onAction("pon")}
-          className="px-4 py-2 font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow-md transform hover:scale-105 active:scale-95 transition-all text-sm"
+          disabled={isSubmitting}
+          onClick={() => handleActionClick("pon")}
+          className="px-4 py-2 font-bold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-lg shadow-md transform hover:scale-105 active:scale-95 transition-all text-sm"
         >
           ポン
         </button>
       )}
 
       {/* Chi Call Action */}
-      {callOptions?.can_chi && (
+      {hasCallOptions && callOptions?.can_chi && (
         <button
           type="button"
-          onClick={() => onAction("chi")}
-          className="px-4 py-2 font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg shadow-md transform hover:scale-105 active:scale-95 transition-all text-sm"
+          disabled={isSubmitting}
+          onClick={() => handleActionClick("chi")}
+          className="px-4 py-2 font-bold text-white bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 rounded-lg shadow-md transform hover:scale-105 active:scale-95 transition-all text-sm"
         >
           チー
         </button>
@@ -89,8 +112,9 @@ export const ActionPrompt: React.FC<ActionPromptProps> = ({
       {hasCallOptions && (
         <button
           type="button"
-          onClick={() => onAction("pass")}
-          className="px-4 py-2 font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 shadow-sm transition-all text-sm"
+          disabled={isSubmitting}
+          onClick={() => handleActionClick("pass")}
+          className="px-4 py-2 font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 rounded-lg border border-slate-600 shadow-sm transition-all text-sm"
         >
           パス
         </button>
